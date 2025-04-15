@@ -1,0 +1,54 @@
+---
+# Jenkins Docker Compose installation and configuration tasks
+
+- name: Ensure Jenkins container is running
+  docker_container:
+    name: jenkins
+    state: started
+    restart_policy: unless-stopped
+    image: "{{ lookup('env', 'JENKINS_IMAGE') }}"  # Use the environment variable for Jenkins image
+    exposed_ports:
+      - "8080"
+      - "50000"
+    published_ports:
+      - "{{ lookup('env', 'JENKINS_PORT') }}:8080"  # Use the environment variable for the Jenkins port
+    networks:
+      - jenkins
+      - proxy
+  become: yes
+
+- name: Wait for Jenkins to be up and running
+  uri:
+    url: "http://localhost:{{ lookup('env', 'JENKINS_PORT') }}/login"  # Wait on the dynamic port
+    status_code: 200
+    validate_certs: no
+  register: result
+  retries: 10
+  delay: 15
+  until: result.status == 200
+
+- name: Display Jenkins is ready
+  debug:
+    msg: "Jenkins is up. Proceed with admin setup, CLI config, or plugin automation"
+
+- name: Get initial admin password
+  slurp:
+    src: /var/jenkins_home/secrets/initialAdminPassword
+  register: admin_pass
+
+- name: Show Jenkins initial admin password
+  debug:
+    msg: "Initial Admin Password: {{ admin_pass['content'] | b64decode }}"
+
+- name: Copy plugins list
+  copy:
+    src: plugins.txt
+    dest: /tmp/plugins.txt
+
+- name: Install plugins via Jenkins CLI
+  shell: |
+    JENKINS_CLI=jenkins-cli.jar
+    curl -o $JENKINS_CLI http://localhost:{{ lookup('env', 'JENKINS_PORT') }}/jnlpJars/jenkins-cli.jar
+    java -jar $JENKINS_CLI -s http://localhost:{{ lookup('env', 'JENKINS_PORT') }} install-plugin $(cat /tmp/plugins.txt) --restart
+  args:
+    chdir: /tmp

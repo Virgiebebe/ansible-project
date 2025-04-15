@@ -1,0 +1,19 @@
+---
+# Default values for Jenkins Role
+
+# Default Jenkins image, can be overridden by setting the JENKINS_IMAGE environment variable
+jenkins_image: "jenkins/jenkins:2.501-alpine-jdk21"
+
+# Default Jenkins port, can be overridden by setting the JENKINS_PORT environment variable
+jenkins_port: 8080
+
+# Jenkins home directory
+jenkins_home: /var/jenkins_home
+
+# List of plugins to be installed
+plugins:
+  - git
+  - blueocean
+  - pipeline-utility-steps
+  - workflow-aggregator
+  - workflow-job

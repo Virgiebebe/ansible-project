@@ -1,0 +1,12 @@
+---
+# Default variables for docker_compose_deploy role
+
+# Base path where the app folders are located
+base_path: "/home/ubuntu/Prod-Compose"
+
+# List of app folders (that will contain docker-compose.yml files)
+# You can leave this empty or override it in the playbook
+app_folders:
+  - "nexus"
+  - "vault"
+  - "jenkins"
