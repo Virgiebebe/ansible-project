@@ -4,19 +4,19 @@
   become: yes
 
   vars:
-    base_path: "/home/ubuntu/Prod-Compose"   # Adjust to where your app folders are
+    base_path: "/home/ubuntu/Prod-Compose"
     app_folders:
-      - nexus
-      - vault
-      - jenkins
+      - nexus-v3.69.0
+      - vaultwarden-v1.30.5
+      - jenkins-v2.432
     jenkins_image: "jenkins/jenkins:2.501-alpine-jdk21"
     jenkins_port: 8080
 
   roles:
-    - docker_compose_deploy
+    - role: docker_compose_deploy
 
   tasks:
-    # ---- Jenkins setup ----
+
     - name: Ensure Jenkins container is running
       docker_container:
         name: jenkins
@@ -47,10 +47,11 @@
       slurp:
         src: /var/jenkins_home/secrets/initialAdminPassword
       register: admin_pass
+      ignore_errors: yes  # In case it's a fresh container and the file isn't ready yet
 
     - name: Show Jenkins initial admin password
       debug:
-        msg: "Initial Admin Password: {{ admin_pass['content'] | b64decode }}"
+        msg: "Initial Admin Password: {{ admin_pass['content'] | b64decode if admin_pass['content'] is defined else 'Not available yet' }}"
 
     - name: Copy plugins list
       copy:
@@ -64,3 +65,4 @@
         java -jar $JENKINS_CLI -s http://localhost:{{ jenkins_port }} install-plugin $(cat /tmp/plugins.txt) --restart
       args:
         chdir: /tmp
+      ignore_errors: yes  # Also optional in case Jenkins isn't quite ready yet
