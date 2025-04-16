@@ -65,4 +65,4 @@
         java -jar $JENKINS_CLI -s http://localhost:{{ jenkins_port }} install-plugin $(cat /tmp/plugins.txt) --restart
       args:
         chdir: /tmp
-      ignore_errors: yes  # Also optional in case Jenkins isn't quite ready yet
+      ignore_errors: yes

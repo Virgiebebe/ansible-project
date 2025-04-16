@@ -7,8 +7,8 @@
     label: "{{ item }}"
   register: folder_check
 
-- name: Run docker-compose up -d in each app folder
-  command: docker-compose up -d
+- name: Run docker compose up -d in each app folder
+  command: docker compose up -d
   args:
     chdir: "{{ base_path }}/{{ item.item }}"
   when: item.stat.exists
