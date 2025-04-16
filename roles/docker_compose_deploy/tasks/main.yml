@@ -1,4 +1,3 @@
----
 - name: Deploy multiple Docker Compose apps
   block:
     - name: Check if {{ item }} folder exists
@@ -8,7 +7,7 @@
       loop: "{{ app_folders }}"
       loop_control:
         label: "{{ item }}"
-    
+
     - name: Debug folder_check to see structure
       debug:
         msg: "folder_check result: {{ folder_check }}"
@@ -16,16 +15,16 @@
     - name: Run docker-compose up -d in each app folder
       command: docker-compose up -d
       args:
-        chdir: "{{ base_path }}/{{ item }}"
-      when: folder_check.results[loop.index0].stat.exists
-      loop: "{{ app_folders }}"
+        chdir: "{{ base_path }}/{{ item.item }}"
+      when: item.stat.exists
+      loop: "{{ folder_check.results }}"
       loop_control:
-        label: "{{ item }}"
+        label: "{{ item.item }}"
 
     - name: Warn if any folders were missing
       debug:
-        msg: "Folder '{{ item }}' does not exist. Skipping."
-      when: not folder_check.results[loop.index0].stat.exists
-      loop: "{{ app_folders }}"
+        msg: "Folder '{{ item.item }}' does not exist. Skipping."
+      when: not item.stat.exists
+      loop: "{{ folder_check.results }}"
       loop_control:
-        label: "{{ item }}"
+        label: "{{ item.item }}"
