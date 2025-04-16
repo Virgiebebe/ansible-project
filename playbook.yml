@@ -1,23 +1,21 @@
 ---
-- name: Deploy Docker Compose apps and Jenkins
+- name: Deploy Docker Compose apps dynamically (Jenkins, Nexus, etc.)
   hosts: all
   become: yes
 
   vars:
     base_path: "/home/ubuntu/Prod-Compose"
-    app_folders:
-      - nexus-v3.69.0
-      - vaultwarden-v1.30.5
-      - jenkins-v2.432
+    app_folders:  # You can modify this for different runs
+      - jenkins-v2.432   # Only Jenkins for now
+      # - nexus-v3.69.0  # Uncomment to deploy Nexus
+      # - vaultwarden-v1.30.5  # Uncomment to deploy Vaultwarden
     jenkins_image: "jenkins/jenkins:2.501-alpine-jdk21"
     jenkins_port: 8080
 
-  roles:
-    - role: docker_compose_deploy
-
   tasks:
 
-    - name: Ensure Jenkins container is running
+    # Jenkins specific deployment
+    - name: Deploy Jenkins container
       docker_container:
         name: jenkins
         state: started
@@ -28,7 +26,9 @@
           - "50000"
         published_ports:
           - "{{ jenkins_port }}:8080"
+      when: "'jenkins-v2.432' in app_folders"  # Only deploy if jenkins folder is in the list
 
+    # Wait for Jenkins to be up and running
     - name: Wait for Jenkins to be up and running
       uri:
         url: "http://localhost:{{ jenkins_port }}/login"
@@ -38,25 +38,30 @@
       retries: 10
       delay: 15
       until: result.status == 200
+      when: "'jenkins-v2.432' in app_folders"
 
     - name: Display Jenkins is ready
       debug:
         msg: "Jenkins is up. Proceed with admin setup, CLI config, or plugin automation"
+      when: "'jenkins-v2.432' in app_folders"
 
     - name: Get initial admin password
       slurp:
         src: /var/jenkins_home/secrets/initialAdminPassword
       register: admin_pass
       ignore_errors: yes  # In case it's a fresh container and the file isn't ready yet
+      when: "'jenkins-v2.432' in app_folders"
 
     - name: Show Jenkins initial admin password
       debug:
         msg: "Initial Admin Password: {{ admin_pass['content'] | b64decode if admin_pass['content'] is defined else 'Not available yet' }}"
+      when: "'jenkins-v2.432' in app_folders"
 
     - name: Copy plugins list
       copy:
         src: plugins.txt
         dest: /tmp/plugins.txt
+      when: "'jenkins-v2.432' in app_folders"
 
     - name: Install plugins via Jenkins CLI
       shell: |
@@ -66,3 +71,30 @@
       args:
         chdir: /tmp
       ignore_errors: yes
+      when: "'jenkins-v2.432' in app_folders"
+
+    # Nexus Deployment
+    - name: Deploy Nexus container
+      docker_container:
+        name: nexus
+        state: started
+        restart_policy: unless-stopped
+        image: "sonatype/nexus3:3.69.0"
+        exposed_ports:
+          - "8081"
+        published_ports:
+          - "8081:8081"
+      when: "'nexus-v3.69.0' in app_folders"  # Only deploy if Nexus folder is in the list
+
+    # Vaultwarden Deployment
+    - name: Deploy Vaultwarden container
+      docker_container:
+        name: vaultwarden
+        state: started
+        restart_policy: unless-stopped
+        image: "vaultwarden/vaultwarden:v1.30.5"
+        exposed_ports:
+          - "8080"
+        published_ports:
+          - "8080:8080"
+      when: "'vaultwarden-v1.30.5' in app_folders"  # Only deploy if Vaultwarden folder is in the list
