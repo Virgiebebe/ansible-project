@@ -1,16 +1,12 @@
 - name: Deploy multiple Docker Compose apps
   block:
-    - name: Check if {{ item }} folder exists
+    - name: Check if app folders exist
       stat:
         path: "{{ base_path }}/{{ item }}"
       register: folder_check
       loop: "{{ app_folders }}"
       loop_control:
         label: "{{ item }}"
-
-    - name: Debug folder_check to see structure
-      debug:
-        msg: "folder_check result: {{ folder_check }}"
 
     - name: Run docker-compose up -d in each app folder
       command: docker-compose up -d
