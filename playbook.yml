@@ -4,7 +4,7 @@
   become: yes
 
   vars:
-    base_path: "/home/ubuntu"   # Adjust to where your app folders are
+    base_path: "/home/ubuntu/Prod-Compose"   # Adjust to where your app folders are
     app_folders:
       - nexus
       - vault
