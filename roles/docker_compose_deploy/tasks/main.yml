@@ -9,23 +9,23 @@
       loop_control:
         label: "{{ item }}"
     
-    - name: Debug the folder_check result
+    - name: Debug folder_check to see structure
       debug:
-        msg: "Folder check result for {{ item }}: {{ folder_check.results }}"
+        msg: "folder_check result: {{ folder_check }}"
 
     - name: Run docker-compose up -d in each app folder
       command: docker-compose up -d
       args:
-        chdir: "{{ base_path }}/{{ item.item }}"
-      when: item.stat.exists
-      loop: "{{ folder_check.results }}"
+        chdir: "{{ base_path }}/{{ item }}"
+      when: folder_check.results[loop.index0].stat.exists
+      loop: "{{ app_folders }}"
       loop_control:
-        label: "{{ item.item }}"
+        label: "{{ item }}"
 
     - name: Warn if any folders were missing
       debug:
-        msg: "Folder '{{ item.item }}' does not exist. Skipping."
-      when: not item.stat.exists
-      loop: "{{ folder_check.results }}"
+        msg: "Folder '{{ item }}' does not exist. Skipping."
+      when: not folder_check.results[loop.index0].stat.exists
+      loop: "{{ app_folders }}"
       loop_control:
-        label: "{{ item.item }}"
+        label: "{{ item }}"
