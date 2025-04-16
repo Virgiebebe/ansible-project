@@ -12,34 +12,10 @@
     jenkins_image: "jenkins/jenkins:2.501-alpine-jdk21"
     jenkins_port: 8080
 
+  roles:
+    - docker_compose_deploy
+
   tasks:
-
-    # ---- Deploy multiple Docker Compose apps ----
-    - name: Check if app folders exist
-      stat:
-        path: "{{ base_path }}/{{ item }}"
-      loop: "{{ app_folders }}"
-      loop_control:
-        label: "{{ item }}"
-      register: folder_check
-
-    - name: Run docker-compose up -d in each app folder
-      command: docker-compose up -d
-      args:
-        chdir: "{{ base_path }}/{{ item }}"
-      when: folder_check.results[loop.index0].stat.exists
-      loop: "{{ app_folders }}"
-      loop_control:
-        label: "{{ item }}"
-
-    - name: Warn if any folders were missing
-      debug:
-        msg: "Folder '{{ item.item }}' does not exist. Skipping."
-      when: not item.stat.exists
-      loop: "{{ folder_check.results }}"
-      loop_control:
-        label: "{{ item.item }}"
-
     # ---- Jenkins setup ----
     - name: Ensure Jenkins container is running
       docker_container:
@@ -52,9 +28,6 @@
           - "50000"
         published_ports:
           - "{{ jenkins_port }}:8080"
-        # Optional: add volumes here if you want data persistence
-        # volumes:
-        #   - jenkins_home:/var/jenkins_home
 
     - name: Wait for Jenkins to be up and running
       uri:
