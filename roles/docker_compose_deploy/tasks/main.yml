@@ -12,16 +12,16 @@
     - name: Run docker-compose up -d in each app folder
       command: docker-compose up -d
       args:
-        chdir: "{{ base_path }}/{{ item }}"
-      when: folder_check.results[loop.index0].stat.exists
-      loop: "{{ app_folders }}"
+        chdir: "{{ base_path }}/{{ item.item }}"  # Use item.item here
+      when: item.stat.exists  # Check if folder exists
+      loop: "{{ folder_check.results }}"  # Loop over results
       loop_control:
-        label: "{{ item }}"
+        label: "{{ item.item }}"
 
     - name: Warn if any folders were missing
       debug:
         msg: "Folder '{{ item.item }}' does not exist. Skipping."
-      when: not item.stat.exists
+      when: not item.stat.exists  # Condition to check missing folders
       loop: "{{ folder_check.results }}"
       loop_control:
         label: "{{ item.item }}"
